@@ -5,8 +5,10 @@ import { Button, Input } from "antd";
 import Link from "next/link";
 import { AuthContext } from "@/shared/AuthProvider";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/services/firebase";
+import { auth, db } from "@/services/firebase";
 import { useRouter } from "next/navigation";
+import { doc, setDoc } from "firebase/firestore";
+import toast from "react-hot-toast";
 
 interface ICredentials {
   name: string;
@@ -16,7 +18,7 @@ interface ICredentials {
 
 function RegisterPage() {
   const router = useRouter();
-  const { state, dispatch } = useContext(AuthContext);
+  const { dispatch } = useContext(AuthContext);
   const [credentials, setCredentials] = useState<ICredentials>({
     name: "",
     email: "",
@@ -32,7 +34,9 @@ function RegisterPage() {
   }
 
   async function handleLogin(e: FormEvent<HTMLFormElement>) {
+    let registerLoadingId;
     try {
+      registerLoadingId = toast.loading("Registering Please wait....");
       e.preventDefault();
       if (
         credentials?.email === "" ||
@@ -47,15 +51,21 @@ function RegisterPage() {
           credentials?.password
         );
         const user: any = userCredentials.user;
+        const payload = {
+          email: user?.email,
+          name: user?.displayName || credentials?.name,
+          profileImage: user?.photoURL,
+        };
+
+        await setDoc(doc(db, "users", user?.uid), payload);
+
         dispatch({
           type: "set-user",
           payload: {
             authToken: user?.accessToken,
             user: {
               uid: user?.uid,
-              email: user?.email,
-              name: user?.displayName,
-              image: user?.photoURL,
+              ...payload,
             },
           },
         });
@@ -67,48 +77,51 @@ function RegisterPage() {
         router.push("/");
       }
     } catch (error) {
-      console.log("something went wrong", error);
+      toast.error("Oops! Something went wrong.");
+    } finally {
+      toast.dismiss(registerLoadingId);
     }
   }
   return (
-    <div className="h-screen w-screen flex flex-col items-center justify-center">
-      <div className="w-2/6">
-        <p className="text-center py-2">Register</p>
-        <form onSubmit={handleLogin}>
+    <div className="w-2/6 border rounded-md p-2">
+      <p className="text-center py-2">Register</p>
+      <form onSubmit={handleLogin}>
+        <Input
+          name="name"
+          type="text"
+          autoComplete="name"
+          value={credentials?.name}
+          onChange={handleInputChange}
+          placeholder="Enter your name"
+        />
+
+        <div className="py-2">
           <Input
-            name="name"
-            type="text"
-            value={credentials?.name}
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={credentials?.email}
             onChange={handleInputChange}
-            placeholder="Enter your name"
+            placeholder="Enter your email"
           />
-
-          <div className="py-2">
-            <Input
-              name="email"
-              type="email"
-              value={credentials?.email}
-              onChange={handleInputChange}
-              placeholder="Enter your email"
-            />
-          </div>
-
-          <div className="py-2">
-            <Input
-              name="password"
-              type="password"
-              value={credentials?.password}
-              onChange={handleInputChange}
-              placeholder="Enter your password"
-            />
-          </div>
-          <Button htmlType="submit" block type="primary">
-            Register
-          </Button>
-        </form>
-        <div className="flex justify-end py-2">
-          <Link href="/login">Have an account ? Login</Link>
         </div>
+
+        <div className="py-2">
+          <Input
+            name="password"
+            type="password"
+            autoComplete="password"
+            value={credentials?.password}
+            onChange={handleInputChange}
+            placeholder="Enter your password"
+          />
+        </div>
+        <Button htmlType="submit" block type="primary">
+          Register
+        </Button>
+      </form>
+      <div className="flex justify-end py-2">
+        <Link href="/login">Have an account ? Login</Link>
       </div>
     </div>
   );

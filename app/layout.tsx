@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import AuthProvider from "@/shared/AuthProvider";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,7 +21,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AntdRegistry>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+          <Toaster position="top-right" reverseOrder={false} />
+            {children}
+          </AuthProvider>
         </AntdRegistry>
       </body>
     </html>

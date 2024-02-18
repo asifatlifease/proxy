@@ -16,7 +16,7 @@ interface IInitialState {
     uid: string;
     name: string;
     email: string;
-    image: string;
+    profileImage: string;
   };
 }
 
@@ -26,7 +26,7 @@ const initialState: IInitialState = {
     uid: "",
     name: "",
     email: "",
-    image: "",
+    profileImage: "",
   },
 };
 
